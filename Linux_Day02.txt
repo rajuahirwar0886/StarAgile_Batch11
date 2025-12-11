@@ -1,0 +1,203 @@
+Linux & Shell Scripting
+-------------------------------------------------
+clear (or) control + l
+pwd
+whoami
+cal 2025
+cal or cal -1
+cat /etc/os-release
+mkdir <DirName>
+mkdir <Dir1Name> <Dir2Name>
+mkdir -p kastro/kiran/kk/Linux
+rmdir
+rm -rf
+
+==================
+Linux_Part 2
+==================
+uptime
+who
+mkdir -v linux_day02
+mkdir learn with kastro
+mkdir "learn with kastro"
+
+=> Creating files in Linux
+1) touch
+2) cat
+3) vi or vim
+4) echo
+5) nano
+
+
+Note: Even if the file extension is not given, Linux will consider such files as normal files
+
+kastro.txt
+kastro.py
+kastro.java
+kastro.net
+kastro ---> Normal file
+
+touch kastro.txt
+ls -l (or)
+touch linux.java linux.py linux.net linux.go
+ls -l kastro
+ll kastro
+ls kastro
+touch kiran/kiran.txt
+
+touch learn{1..5}.txt
+learn1.txt
+learn2.txt
+learn3.txt
+learn4.txt
+learn5.txt
+
+rm learn1.txt
+rm learn2.txt learn3.txt
+rm *.py
+rm learn*
+
+mv kastro.py devops.py
+mv learn devops
+
+rm -rf *
+rm -rf <DirName>
+
+cat > linux.txt
+cat linux.txt
+cat >> linux.txt
+cat -n linux.txt
+
+wc linux.txt
+
+vim kiran.py
+vi kiran.py
+
+:wq ---> save and quit
+:q! ---> without saving the file, you will quit
+:w ---> just to save the data
+
+nano devops.java
+
+echo "this is linux"
+
+echo "this is linux" > git.txt
+
+echo "im devops trainer" >> git.txt
+
+mv devops.java /home/ec2-user/kastro
+
+find /home/ec2-user/ -name kastro.txt
+
+cat kastro.txt kiran.py
+cp kastro.txt kiran.py
+
+tac linux.txt
+
+cat *.txt
+
+more *.txt ---> press "space bar" to see the data of each file
+less *.txt
+
+cp Dockerfile Dockerfile_bkp
+
+>Dockerfile
+
+head -n 5 Dockerfile
+
+tail -n 5 Dockerfile
+
+shift+a
+shift+i
+shift+o
+shift+g
+
+:set number
+:<LineNumber>
+
+yy
+p
+dd
+u
+control+r
+/<WordName>
+:%d
+
+
+GREP - Global Regular Expression Print
+
+grep 'linux' Dockerfile
+
+grep -i 'linux' Dockerfile
+
+grep -i 'linux' *
+
+grep -i 'linux' *.txt
+
+grep -i 'linux' *.py
+
+grep -i 'linux' kastro*
+
+grep -n 'linux' Dockerfile
+
+grep -n -i 'linux' Dockerfile
+
+grep -v 'linux' Dockerfile
+
+File Permissions in Linux
+rw-r--r-- Dockerfile
+
+In Linux, file permissions are categorized into 3 ways;
+	1. User permissions (u)
+	
+
+	2. Group permissions (g)
+
+
+	3. Others permissions (o)
+
+For every category, we will have 3 permissions
+	read (r)
+	write (w)
+	execute (x)
+
+chmod u-r Dockerfile
+
+o - no permissions
+1 - execute
+2 - write
+3 - 2+1 - write + execute
+4 - read
+5 - 4+1 - read + execute
+6 - 4 + 2 - read + write
+7 - 6+ 1 - read + write + execute
+
+
+
+
+SED - Stream Editor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
