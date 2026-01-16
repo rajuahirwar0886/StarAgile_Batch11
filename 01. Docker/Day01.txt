@@ -1,0 +1,143 @@
+Modules;
+Docker		- 3 days
+Kubernetes	- 4 days
+Ansible		- 3 days
+============================================
+Nexus Video: https://youtu.be/opJAfDOCZuI?si=OPirEG6OECCzXSBR
+
+Tomcat Video: https://youtu.be/6lIEVDfb5-k?si=-nwlBg-7hgTtSyLO 
+
+Docker is lightweight
+
+DOCKER Installation
+
+sudo yum install -y docker
+sudo service docker start
+sudo systemctl enable docker.service
+docker --version
+
+Basic Docker Commands
+docker images
+docker ps (running containers)
+docker ps -a (all the containers)
+
+docker pull amazonlinux
+
+docker run -it --name container001 amazonlinux
+
+docker run -it -d --name container001 amazonlinux (OR) docker run -itd --name container001 amazonlinux
+
+control + d		- it will kill all the process that is running inside the container immediately
+control + p + q
+
+docker attach container001
+docker exec -it afbe1bf49356 /bin/bash
+
+docker stop container001
+docker start container001
+
+docker pause container001
+docker unpause container001
+
+docker rm container002
+docker rm -f container002
+
+docker logs container002
+docker stats container002
+
+Note: We cannot create multiple containers with the same container name
+Note: We can create multiple containers with the same image, but not with same container name
+
+docker rename container002 container-2
+
+docker rm $(docker ps -aq)
+docker rmi -f $(docker images -q)
+
+============
+DOCKERFILE
+============
+Dockerfile has instructions to build the docker image for the custom applications
+Dockerfile has DSL key-words
+DSL - Domain Specific Language
+All the instructions in the Dockerfile will be processed from top to bottom
+
+Dockerfile has the below key-words;
+FROM - It is used to setup the base image to run application
+FROM ubuntu
+FROM amazon-Linux
+FROM python
+FROM tomcat
+
+RUN - It is used to execute the commands 'while creating the docker image'
+RUN touch kastro.py
+RUN mkdir kastro
+RUN yum install git -y
+RUN git clone <RepoURL>
+
+CMD - It is used to execute the commands 'while creating the docker container'
+
+Note: We can write multiple RUN instructions in the same Dockerfile and all the RUN instructions will be processed from TOP to BOTTOM
+We can write multiple CMD instructions in the same Dockerfile, but only the last CMD instruction in the Dockerfile will be processed 
+CMD touch kastro.py
+CMD mkdir kastro
+CMD yum install git -y
+CMD git clone <RepoURL>
+
+Ex:
+RUN touch kastro.py
+RUN mkdir kastro
+CMD yum install git -y
+RUN touch docker.java
+CMD mkdir docker
+RUN pwd
+
+docker build -t image001 .
+docker run -it --name container001 image001:latest
+
+docker run -itd --name container001 image001:latest
+docker exec -it afbe1bf49356 /bin/bash
+
+COPY - it is used to copy the files/directories to a docker image while creating the image
+
+ADD - it is also used to copy the files from source location to destination location to the image
+ADD command can download the files from remote location (internet)
+
+WORKDIR - it is used to set the working directory inside the container
+Whatever commands that we write after WORKDIR, all those commands will get executed inside the Working Directory 
+
+EXPOSE - it is used to expose our application for the public
+EXPOSE 8080
+
+ENTRYPOINT - All the entrypoint instructions will get executed when container starts
+
+PRACTISE VIDEOS:
+OS Level Virtualization: https://youtu.be/_ObRZuSab4I?si=NhEd9OmcZW6-II6l
+Dockerfile_Part 1: https://youtu.be/KbWOBCDUn24?si=Y6v6LgEjC-ud0yii
+Dockerfile_Part 2: https://youtu.be/ZX4EIXhCDPM?si=0fgut5uF62s64B0f
+
+LABEL
+ENV
+ARGS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
