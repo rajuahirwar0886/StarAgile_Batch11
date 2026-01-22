@@ -1,0 +1,10 @@
+apiVersion: v1  #the apiversion of the resource we want to create
+kind: Pod #it represents what we want to create
+metadata:
+  name: single-container-pod  #name of the pod'
+spec:
+  containers:
+    - name: nginx-single-container  #container name
+      image: nginx:latest
+      ports:
+        - containerPort: 80

@@ -1,0 +1,194 @@
+Kubernetes_Day 01
+===================
+Types of Clusters;
+Self Managed Clusters - here everything has to be managed by the users
+	kubeadm
+	kind
+	minikube...
+
+Cloud Managed Clusters - here everything will be managed by the Cloud Service Providers
+	AWS - EKS**
+	Azure - AKS
+	Google - GKE
+	IBM - IKE
+
+EKS is so costly (3000-5000 Rs)
+
+How to create a cluster?
+4 methods of creating a cluster;
+AWS Console ---> EKS ----> Create Cluster ----> Configure the info ----> Cluster is ready
+CLI** (Command Line Interface) ----> Create the cluster using commands
+Terraform ----> tf files
+YAML ----> yml 
+
+=> Install kubectl 
+curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin
+kubectl version --short --client
+
+=> Install AWS CLI latest version 
+sudo apt install unzip
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+aws --version
+
+=> Install eksctl
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+sudo mv /tmp/eksctl /usr/local/bin
+eksctl version
+
+=> Creation of Cluster
+eksctl create cluster --name kastro-cluster --region ap-south-1 --node-type t2.medium  --zones ap-south-1a,ap-south-1b
+
+The above commands uses some default values;
+It creates 2 worker nodes
+These 2 worker nodes will have 80 GB capacity
+These 2 worker nodes doesn't have the key-pair ----> You cannot connect with the worker nodes
+
+eksctl create cluster --name kastro-cluster --region ap-south-1 --node-type t2.medium  --zones ap-south-1a,ap-south-1b,ap-south-1c --nodes 5
+
+#To delete the cluster
+eksctl delete cluster --name kastro-cluster --region ap-south-1
+
+==> Practice Purpose;
+eksctl YAML — create-eks-cluster.yaml
+
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: kastro-eks-cluster
+  region: us-east-1
+  version: "1.32"   # You can change Kubernetes version if needed
+
+availabilityZones:
+  - us-east-1a
+  - us-east-1b
+  - us-east-1c
+
+nodeGroups:
+  - name: worker-ng
+    instanceType: t2.micro
+    desiredCapacity: 3
+    minSize: 3
+    maxSize: 3
+    volumeSize: 30
+    ssh:
+      publicKeyName: jenkins-kastro
+    availabilityZones:
+      - us-east-1a
+      - us-east-1b
+      - us-east-1c
+
+eksctl create cluster -f create-eks-cluster.yaml
+
+Basic Commands;
+
+
+kubectl apply -f <YAML FILE NAME>
+OR
+kubectl create -f <YAML FILE NAME>
+
+To delete the resources which are created by using a specific yaml file
+kubectl delete -f <YAML FILE NAME>
+
+   16  kubectl get nodes
+   17  kubectl get pods
+   18  kubectl api-resources
+   19  kubectl explain pod.apiVersion
+   20  kubectl explain service.apiVersion
+   21  kubectl explain deployment.apiVersion
+   22  kubectl api-resources
+   23  kubectl api-resources | grep -i deployment
+   24  clear
+   26  aws eks list-clusters --region ap-south-1
+   27  aws eks list-clusters --region us-east-1
+
+Types of pods;
+Single container pod
+Multi container (side car container) pod
+
+For every pod you will get unique pod IP.
+When a pod gets deleted, the ip address will also get deleted - Pods are called as ephemeral
+CNI  plugin is responsible to allocate the pod IPs
+
+By default the apps running inside a pod can only be accessible within the cluster
+If you want to access the application outside of the cluster, we will use Kubernetes Services
+kubectl get pods
+   38  kubectl apply -f single-pod.yml
+   39  kubectl get pods
+   40  kubectl get nodes
+   41  kubectl get pods -o wide
+   42  clear
+   43  kubectl get nodes
+   44  kubectl get pods
+   45  kubectl get pod
+   46  kubectl get po
+   47  kubectl get p
+   48  clear
+   49  kubectl get po
+   50  kubectl describe pod single-container-pod
+   51  clear
+   52  kubectl get po
+   53  kubectl exec -it single-container-pod -- /bin/bash
+   54  kubectl get pods
+   55  kubectl exec -it single-container-pod -c nginx-single-container -- /bin/bash
+
+Kubernetes Services;
+Kubernetes services are used to expose our application outside of the cluster.
+
+Types of K8s Services;
+ClusterIP		- default	- will not allow to access the app in the browser
+NodePort
+LoadBalancer
+
+Pod manifest file - contains pod information
+Service manifest file - contains how you want to expose your application
+	To tell to service to expose an app which is running inside a pod, we will use "selector"
+	Selector will select the pods by using pod labels
+
+NodePort:
+By default Kubernetes will allocate a port number to the app running inside the container that port is kwnon as NodePort
+NodePort will range in between 30000 to 32767
+
+Note: If you dont give node port number in the manifest file, by default Kubernetes will allocate the node port number with in the range of 30000 to 32767
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

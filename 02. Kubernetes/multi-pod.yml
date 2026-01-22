@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-sidecar
+spec:
+  containers:
+    - name: nginx-sidecar-container
+      image: nginx:latest
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: shared-log
+          mountPath: /var/log/nginx
+
+    - name: log-tailer
+      image: busybox
+      command: ["sh", "-c"]
+      args: ["tail -f /var/log/nginx/access.log"]
+      volumeMounts:
+        - name: shared-log
+          mountPath: /var/log/nginx
+
+  volumes:
+    - name: shared-log  #name of the volume
+      emptyDir: {}  #this directory will be available till the time pod is available
