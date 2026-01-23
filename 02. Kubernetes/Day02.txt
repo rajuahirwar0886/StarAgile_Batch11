@@ -1,0 +1,337 @@
+Kubernetes_Day 02
+===================
+Namespace:
+
+By default all the resources in Kubernetes will get created in the "default" namespace
+
+kubectl get ns
+    3  kubectl get pods
+    4  kubectl create ns dev
+    5  kubectl get ns
+    6  kubectl get pods
+    7  kubectl get pods -n kube-system
+    8  clear
+    9  kubectl get ns
+   10  kubectl get pods
+   11  kubectl config view
+   12  clear
+   13  kubectl get ns
+   14  kubectl config set-context --current --namespace=dev
+   15  kubectl get pods
+   16  kubectl config view
+   17  clear
+   18  kubectl run dev-pod1 --image nginx
+   19  kubectl get pods
+   20  kubectl run dev-pod2 --image nginx
+   21  kubectl run dev-pod3 --image nginx
+   22  kubectl get pods
+   23  kubectl config set-context --current --namespace=default
+   24  kubectl get pods
+   25  kubectl config view
+   26  clear
+   27  kubectl get ns
+   28  kubectl get pods -n dev
+   29  kubectl create ns test
+   30  kubectl get ns
+   31  kubectl config set-context --current --namespace=test
+   32  kubectl get pods
+   33  kubectl run test-pod3 --image nginx
+   34  kubectl run test-pod2 --image nginx
+   35  kubectl run test-pod1 --image nginx
+   36  kubectl get pods
+   37  clear
+   38  kubectl config view
+   39  kubectl get pods
+   40  kubectl get ns
+   41  kubectl get pods -n dev
+   42  kubectl delete pod dev-pod1 -n dev
+   43  kubectl get pods -n dev
+   44  kubectl config set-context --current --namespace=default
+   45  kubectl get pods
+   46  kubectl get ns
+   47  kubectl get pods -n dev
+   48  kubectl get pods -n test
+   49  kubectl get svc -n test
+   50  kubectl get svc -n dev
+   51  kubectl delete ns dev
+   52  kubectl get pods -n dev
+   53  clear
+   54  kubectl get ns
+   55  vi ns.yml
+   56  kubectl apply -f ns.yml
+   57  kubectl get pods
+   58  kubectl get pods -n swiggy-ns
+   59  kubectl get svc -n swiggy-ns
+   60  kubectl get pods -o wide
+   61  kubectl get pods -o wide -n swiggy-ns
+   62  kubectl get ns
+   63  kubectl delete ns swiggy-ns
+
+
+=> Kubernetes Controllers
+A K8s controller will always maintain the required number of pods for your application
+HA for your application
+
+desired state	- 10 pods
+actual state  - 10 pods - 5 pods + 5 pods
+
+replicas
+
+If a pod crashes, the controller notices the pods and recreates it - reconciliation
+
+Types of Controllers;
+Replication Controller
+Replica Set
+Deployment
+DaemonSet
+StatefulSet
+
+Replication Controller - RC ensures that a specified number of pod replicas are running at any given time
+If a pod fails/deletes, the RC will create a new pod to replace the deleted/failed pod
+
+kind: ReplicationController
+
+template ----> we will write pod information
+
+
+Task: Create the RC in a particular namespace
+
+Limitations of RC;
+multiple labels to the pod
+
+v2 - currently deployed - it is not functioning
+v1 - old version
+Rolling Updates is not possible - RC cannot handle rolling updates (very slow)
+RC is deprecated
+
+Replica Set - Advanced version of RC is RS
+
+RC;
+  selector: #it is used to identify the pod
+    app:
+
+equality based selector
+
+RS;
+selector:
+	matchLabels: 
+		app: zomato-app	
+		version: v2
+		env: prod
+
+    3  kubectl apply -f rc.yml
+    4  kubectl get pods
+    5  kubectl get rc
+    6  kubectl get svc
+    7  kubectl delete pod zomato-rc-bgjkg
+    8  kubectl get pods
+    9  ls
+   10  vi rc.yml
+   11  kubectl scale rc zomato-rc --replicas 6
+   12  kubectl get pods
+   13  ls
+   14  kubectl delete -f rc.yml
+   15  vi rs.yml
+   16  kubectl apply -f rs.yml
+   17  kubectl get pods
+
+
+Tasks:
+Zomato App: https://youtu.be/GyoI6-I68aQ?si=XILMtEdOYKUPanwq
+
+Book My Show App: https://youtu.be/hBGVwa8MY4A?si=eyFygjuDcrfJ2A4g
+
+Multibranch Job: https://youtu.be/1ecF4lKBlMo?si=qCECxLQpeyHQW6Mh
+
+GitHub Actions Project: https://youtu.be/q-eSiKqi_0o?si=LDP77YPrE8pHxIxK
+
+Rollout is not possible with RC & RS
+
+=> Deployment
+Roll back is possible with deployments
+Using Deployments we can manage multiple versions of the same application
+
+Types of Deployment Strategies;
+Rolling Update (default)	
+Recreate
+Blue-Green Deployment
+Canary Deployment
+
+Version 1 - Zomato (Image: kastrov/Zomato:v1)
+Version 2 - Swiggy (Image: kastrov/Zomato:v2)
+
+
+Blue-Green Deployment
+Blue		- old version		- deployed	- users accessing blue version
+Green		- latest version	- deployed	- switch the traffic to green version
+
+In blue green deployment the traffic switches immediately
+Blue deployment yml
+Green deployment yml
+
+# 🔵 Blue Deployment (Version 1 - Stable Release)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-blue
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: blue
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+        command: ["/bin/sh"]
+        args:
+          - "-c"
+          - |
+            echo '<html><body style="background-color:skyblue;">
+            <h1>YouTube/LearnWithKASTRO</h1>
+            <h2>This is BLUE (Version 1)</h2>
+            </body></html>' > /usr/share/nginx/html/index.html && nginx -g "daemon off;"
+
+
+deployment-green.yaml
+
+# 🟢 Green Deployment (Version 2 - New Release)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-green
+spec:
+  replicas: 3 # fully available but not serving traffic yet
+  selector:
+    matchLabels:
+      app: nginx
+      version: green
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: green
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+        command: ["/bin/sh"]
+        args:
+          - "-c"
+          - |
+            echo '<html><body style="background-color:lightgreen;">
+            <h1>www.learnwithkastro.com</h1>
+            <h2>This is GREEN (Version 2)</h2>
+            </body></html>' > /usr/share/nginx/html/index.html && nginx -g "daemon off;"
+
+# 🌐 LoadBalancer Service
+# Initially routes ONLY to the BLUE version (v1)
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-lb
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+    version: blue   # ← Switch this later to "green" for release
+  ports:
+  - port: 80
+    targetPort: 80
+
+
+🚫 Rollback if Something Goes Wrong
+Switch back to Blue anytime:
+kubectl patch svc nginx-lb -p '{"spec":{"selector":{"app":"nginx","version":"green"}}}'
+
+    1  clear
+    2  vi rc.yml
+    3  kubectl apply -f rc.yml
+    4  kubectl get pods
+    5  kubectl get rc
+    6  kubectl get svc
+    7  kubectl delete pod zomato-rc-bgjkg
+    8  kubectl get pods
+    9  ls
+   10  vi rc.yml
+   11  kubectl scale rc zomato-rc --replicas 6
+   12  kubectl get pods
+   13  ls
+   14  kubectl delete -f rc.yml
+   15  vi rs.yml
+   16  kubectl apply -f rs.yml
+   17  kubectl get pods
+   18  history
+   19  clear
+   20  kubectl get rs
+   21  kubectl describe rs zomato-rs
+   22  clear
+   23  kubectl get rs
+   24  kubectl get pods --show-labels
+   25  kubectl scale rs/zomato-rs --replicas=10
+   26  kubectl get pods
+   27  kubectl scale rs/zomato-rs --replicas=3
+   28  kubectl get pods
+   29  kubectl get rs
+   30  vi rs.yml
+   31  kubectl create -f rs.yml
+   32  kubectl apply -f rs.yml
+   33  kubectl get pods
+   34  kubectl describe pod -l app=zomato-app | grep -i image
+   35  kubectl edit rs/zomato-rs
+   36  ls
+   37  kubectl delete -f rs.yml
+   38  kubectl get pods
+   39  clear
+   40  vi deploy.yml
+   41  kubectl apply -f deploy.yml
+   42  kubectl get deployment
+   43  kubectl get deploy
+   44  kubectl get pods
+   45  kubectl get svc
+   46  kubectl scale deploy/zomato-deployment --replicas=10
+   47  kubectl get pods
+   48  kubectl scale deploy/zomato-deployment --replicas=3
+   49  kubectl get pods
+   50  clear
+   51  kubectl get pods
+   52  kubectl describe pod -l app=food | grep -i image
+   53  vi deploy.yml
+   54  kubectl get deploy
+   55  kubectl edit deploy/zomato-deployment
+   56  kubectl get pods
+   57  kubectl get pods -w
+   58  kubectl get pods
+   59  kubectl rollout history deploy/zomato-deployment
+   60  kubectl annotate deployment zomato-deployment kubernetes.io/change-cause="Updated zomato to swiggy" --overwrite
+   61  kubectl rollout history deploy/zomato-deployment
+   62  kubectl rollout status deploy/zomato-deployment
+   63  kubectl rollout undo deploy/zomato-deployment
+   64  kubectl get pods
+   65  ls
+   66  kubectl delete -f deploy.yml
+   67  clear
+   68  vi blue-deploy.yml
+   69  vi green-deploy.yml
+   70  vi common-service.yml
+   71  kubectl apply -f blue-deploy.yml
+   72  kubectl apply -f green-deploy.yml
+   73  kubectl get pods
+   74  kubectl apply -f common-service.yml
+   75  kubectl get svc
+   76  kubectl get pods
+   77  kubectl patch svc nginx-lb -p '{"spec":{"selector":{"app":"nginx","version":"green"}}}'
+   78  kubectl get pods
+   79  kubectl patch svc nginx-lb -p '{"spec":{"selector":{"app":"nginx","version":"blue"}}}'
+   80  kubectl get pods
+
