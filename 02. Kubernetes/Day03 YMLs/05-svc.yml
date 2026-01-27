@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ebs-svc
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx-ebs
+  ports:
+    - port: 80
+      targetPort: 80

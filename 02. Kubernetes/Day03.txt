@@ -1,0 +1,266 @@
+Kubernetes_Day 03
+===================
+Tasks: 
+Ecommerce Application: https://www.youtube.com/watch?v=l-5JQcI_CH0&list=PLs-PsDpuAuTfG3gFR5DnVD58kT7JBO97x&index=3&pp=iAQB
+Microservices Project: https://www.youtube.com/watch?v=3fhvnsNY5fc&list=PLs-PsDpuAuTfG3gFR5DnVD58kT7JBO97x&index=4&pp=iAQB2AaEIw%3D%3D
+
+
+Canary Deployment;
+
+V1
+V2
+Common Service
+
+For my app - 5 pods
+Version 1 - 4 pods
+Version 2 - 1 pod
+================
+Version 1 - 3 pods
+Version 2 - 2 pods
+================
+Version 1 - 0 pods
+Version 2 - 5 pods
+
+1️⃣ Deployment - Version 1 (Blue Page)
+📌 deployment-v1.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-v1
+spec:
+  replicas: 4 # 100% traffic initial
+  selector:
+    matchLabels:
+      app: nginx
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: v1
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+        command: ["/bin/sh"]
+        args:
+          - "-c"
+          - |
+            echo '<html><body style="background-color:blue;">
+            <h1 style="color:white;">THIS IS VERSION 1</h1>
+            </body></html>' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'
+
+2️⃣ Deployment - Version 2 (Green Page)
+📌 deployment-v2.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-v2
+spec:
+  replicas: 1 # Start with 25% traffic
+  selector:
+    matchLabels:
+      app: nginx
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: v2
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+        command: ["/bin/sh"]
+        args:
+          - "-c"
+          - |
+            echo '<html><body style="background-color:green;">
+            <h1 style="color:white;">THIS IS VERSION 2 (CANARY)</h1>
+            </body></html>' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'
+
+3️⃣ LoadBalancer Service
+📌 service-lb.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-lb
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx # matches both v1 + v2
+  ports:
+  - port: 80
+    targetPort: 80
+============
+K8s Volumes
+
+PV		- Persistent Volume
+PVC	- Persistent Volume Claim
+
+When you want to attach a storage to PODS, we can do it in 2 ways;
+	Static Provisioning		- manual
+	Dynamic Provisioning	- automation****
+
+Storage Class
+It defines how a volume should be created dynamically - it allows dynamic provisioning of storage
+
+Reclaim Policy
+It defines whether you need the volume even after the pod is deleted
+Types;
+Retain	
+Delete
+Recycle (Deprecated)
+persistentVolumeReclaimPolicy: Retain
+
+Access Modes
+RWO (ReadWriteOnce)	- one pod on one node can read & write
+ROX (ReadOnlyMany) - multiple pods can read, none can write
+RWX (ReadWriteMany) - multiple pods can read and write the data
+
+EBS Volumes supports only RWO
+EFS - RWX
+
+CSI Driver - Container Storage Interface
+
+Dynamic provisioning with EBS CSI
+------------------------------------------------------------------------------------------
+Goal: Dynamically provision EBS volumes for a pod using a StorageClass, PVC, and Deployment. We’ll use nginx as the sample application.
+
+Pre-requisites;
+=> IAM Requirement for Worker Nodes:
+Attach AmazonEBSCSIDriverPolicy to your worker node IAM role.
+This allows Kubernetes to create, attach, detach, and delete EBS volumes dynamically.
+
+=> eksctl doesn’t know which AWS region to use. You have to explicitly set it
+eksctl utils associate-iam-oidc-provider --cluster kastro-cluster --region us-east-1 --approve
+This allows Kubernetes service accounts to assume IAM roles (needed for CSI driver).
+
+=> Check if the EBS CSI driver pods are running:
+kubectl get pods -n kube-system | grep ebs-csi
+
+You should see pods like ebs-csi-controller-... and ebs-csi-node-... in Running state.
+If nothing appears, you need to install it.
+
+=> Install EBS CSI Driver
+Download Helm installation script (Here I will use HELM to do this)
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+helm version
+
+Add the Helm repo
+helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+
+helm repo update
+# This ensures Helm fetches the latest charts from the repo.
+
+helm repo list
+#You should see something like below;
+NAME                     URL
+aws-ebs-csi-driver       https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+
+Install EBS CSI driver
+helm install aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
+    --namespace kube-system \
+    --create-namespace \
+    --set image.repository=602401143452.dkr.ecr.us-east-1.amazonaws.com/eks/aws-ebs-csi-driver
+
+Verify installation
+kubectl get pods -n kube-system | grep ebs-csi
+#You should see controller and node pods in Running state.
+
+
+To know which pod is using which VOLUME;
+kubectl get pod -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,VOLUME:.spec.volumes[*].persistentVolumeClaim.claimName
+=================
+==========================================
+StatefulSet
+To maintain stable identity to the pods, we will use statefulset
+This is used for database pods
+Persistent storage to the pods
+
+nginx-0
+nginx-1
+nginx-2
+
+
+3. Problem Demonstration
+deployment-mysql.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "password"
+        - name: MYSQL_DATABASE
+          value: "testdb"
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-storage
+        emptyDir: {}
+
+# Apply the deployment
+kubectl apply -f deployment-mysql.yaml
+
+# Check pods
+kubectl get pods -o wide
+
+# Delete a pod and watch it get recreated with different name
+kubectl delete pod mysql-deployment-5d8b66464f-abc12
+kubectl get pods
+
+# Create the database first
+kubectl exec -it mysql-deployment-66b6d79c8-qg9hl -- mysql -uroot -ppassword -e "CREATE DATABASE testdb;"
+
+# Now create the table in the specific database
+kubectl exec -it mysql-deployment-66b6d79c8-qg9hl -- mysql -uroot -ppassword -D testdb -e "CREATE TABLE test_table (id INT);"
+
+# Verify the table was created
+kubectl exec -it mysql-deployment-66b6d79c8-qg9hl -- mysql -uroot -ppassword -D testdb -e "SHOW TABLES;"
+
+4. Now let's demonstrate the problem with Deployment:
+# Insert some test data
+kubectl exec -it mysql-deployment-66b6d79c8-qg9hl -- mysql -uroot -ppassword -D testdb -e "INSERT INTO test_table VALUES (1), (2), (3);"
+
+# Verify data exists
+kubectl exec -it mysql-deployment-66b6d79c8-qg9hl -- mysql -uroot -ppassword -D testdb -e "SELECT * FROM test_table;"
+
+# Now delete the pod to simulate failure
+kubectl delete pod mysql-deployment-66b6d79c8-qg9hl
+
+# Wait for new pod to start
+kubectl get pods -w
+
+# Check if data persists (it won't!)
+kubectl exec -it $(kubectl get pods -l app=mysql -o jsonpath='{.items[0].metadata.name}') -- mysql -uroot -ppassword -D testdb -e "SELECT * FROM test_table;"
+
+5. Expected Output - Data Loss Demonstrated:
+The SELECT * FROM test_table; command will fail with:
+ERROR 1146 (42S02) at line 1: Table 'testdb.test_table' doesn't exist
+
+DaemonSet
+If you want only one pod on each node which is related to a specific deployment, then we will use DaemonSet
